@@ -1,97 +1,76 @@
-from inputs import get_gamepad
+import inputs
 import math
 import threading
 
-class XboxController(object):
-    MAX_TRIG_VAL = math.pow(2, 8)
-    MAX_JOY_VAL = math.pow(2, 15)
+class XboxOneController:
+    # Constants for maximum values of triggers and joysticks
+    # The joystick and triggers will give integers between 0 and 255 for triggers
+    # and -32768 to 32767 for joysticks, so we will normalize them to 0-1 range
+    # with these constants
+    max_trig_val = 256  # 2 to the power of 8, as the trigger values are unsigned 8-bit integers
+    max_joy_val = 32768  # 2 to the power of 15, as the joystick values are signed 16-bit integers
 
     def __init__(self):
-
-        self.LeftJoystickY = 0
-        self.LeftJoystickX = 0
-        self.RightJoystickY = 0
-        self.RightJoystickX = 0
-        self.LeftTrigger = 0
-        self.RightTrigger = 0
-        self.LeftBumper = 0
-        self.RightBumper = 0
-        self.A = 0
-        self.X = 0
-        self.Y = 0
-        self.B = 0
-        self.LeftThumb = 0
-        self.RightThumb = 0
-        self.Back = 0
-        self.Start = 0
-        self.LeftDPad = 0
-        self.RightDPad = 0
-        self.UpDPad = 0
-        self.DownDPad = 0
+        self.left_joystick = [0, 0]
+        self.right_joystick = [0, 0]
+        self.left_trig = 0
+        self.right_trig = 0
+        self.left_bumper = 0
+        self.right_bumper = 0
+        self.a_button = 0
+        self.x_button = 0
+        self.y_button = 0
+        self.b_button = 0
+        self.left_joystick_button = 0
+        self.right_joystick_button = 0
+        self.back = 0
+        self.start = 0
+        # d-pad on xbox one does not work with inputs library, so we will not implement it
+        # it might be my issue, if it works for you please create an issue on github to let me know
+        # or if you know how to fix it, create a pull request on github
 
         self._monitor_thread = threading.Thread(target=self._monitor_controller, args=())
         self._monitor_thread.daemon = True
         self._monitor_thread.start()
 
-
-    def read(self): # return the buttons/triggers that you care about in this methode
-        x = self.LeftJoystickX
-        y = self.LeftJoystickY
-        a = self.A
-        b = self.X # b=1, x=2
-        rb = self.RightBumper
-        return [x, y, a, b, rb]
-
-
     def _monitor_controller(self):
         while True:
-            events = get_gamepad()
+            events = inputs.get_gamepad()
             for event in events:
                 if event.code == 'ABS_Y':
-                    self.LeftJoystickY = event.state / XboxController.MAX_JOY_VAL # normalize between -1 and 1
+                    self.left_joystick[1] = event.state / self.max_joy_val
                 elif event.code == 'ABS_X':
-                    self.LeftJoystickX = event.state / XboxController.MAX_JOY_VAL # normalize between -1 and 1
+                    self.left_joystick[0] = event.state / self.max_joy_val
                 elif event.code == 'ABS_RY':
-                    self.RightJoystickY = event.state / XboxController.MAX_JOY_VAL # normalize between -1 and 1
+                    self.right_joystick[1] = event.state / self.max_joy_val
                 elif event.code == 'ABS_RX':
-                    self.RightJoystickX = event.state / XboxController.MAX_JOY_VAL # normalize between -1 and 1
+                    self.right_joystick[0] = event.state / self.max_joy_val
                 elif event.code == 'ABS_Z':
-                    self.LeftTrigger = event.state / XboxController.MAX_TRIG_VAL # normalize between 0 and 1
+                    self.left_trig = event.state / self.max_trig_val
                 elif event.code == 'ABS_RZ':
-                    self.RightTrigger = event.state / XboxController.MAX_TRIG_VAL # normalize between 0 and 1
+                    self.right_trig = event.state / self.max_trig_val
                 elif event.code == 'BTN_TL':
-                    self.LeftBumper = event.state
+                    self.left_bumper = event.state
                 elif event.code == 'BTN_TR':
-                    self.RightBumper = event.state
+                    self.right_bumper = event.state
                 elif event.code == 'BTN_SOUTH':
-                    self.A = event.state
+                    self.a_button = event.state
                 elif event.code == 'BTN_NORTH':
-                    self.Y = event.state #previously switched with X
+                    self.y_button = event.state
                 elif event.code == 'BTN_WEST':
-                    self.X = event.state #previously switched with Y
+                    self.x_button = event.state
                 elif event.code == 'BTN_EAST':
-                    self.B = event.state
+                    self.b_button = event.state
                 elif event.code == 'BTN_THUMBL':
-                    self.LeftThumb = event.state
+                    self.left_joystick_button = event.state
                 elif event.code == 'BTN_THUMBR':
-                    self.RightThumb = event.state
+                    self.right_joystick_button = event.state
                 elif event.code == 'BTN_SELECT':
-                    self.Back = event.state
+                    self.back = event.state
                 elif event.code == 'BTN_START':
-                    self.Start = event.state
-                elif event.code == 'BTN_TRIGGER_HAPPY1':
-                    self.LeftDPad = event.state
-                elif event.code == 'BTN_TRIGGER_HAPPY2':
-                    self.RightDPad = event.state
-                elif event.code == 'BTN_TRIGGER_HAPPY3':
-                    self.UpDPad = event.state
-                elif event.code == 'BTN_TRIGGER_HAPPY4':
-                    self.DownDPad = event.state
-
-
-
+                    self.start = event.state
 
 if __name__ == '__main__':
-    joy = XboxController()
+    js = XboxOneController()
     while True:
-        print(joy.read())
+        print(js.left_joystick, js.right_joystick)
