@@ -1,35 +1,41 @@
-import inputs
+# from mouse import MouseHandler as MouseHandler
+from XInput import *
 import pynput
 import time
-import threading
 
-cursor = pynput.mouse.Controller()
+if __name__ == "__main__":
+    set_deadzone(DEADZONE_TRIGGER,10)
 
-x = 0
-y = 0
+    class MouseHandler(EventHandler):
+        def __init__(self, cursor,  *controllers):
+            self.cursor = cursor
+            super().__init__(
+                *controllers,
+                )
 
-def move_mouse(cursor):
-    global x
-    global y
-    while True:
-        time.sleep(0.1)
-        cursor.move(x, y)
+        def process_button_event(self, event):
+            if event.type == EVENT_BUTTON_PRESSED and event.button == BUTTON_RIGHT_SHOULDER:
+                self.cursor.click(pynput.mouse.Button.left)
+            print(event.type, event.button)
 
-monitor_thread = threading.Thread(target=move_mouse, args=(cursor,), daemon=True)
-monitor_thread.start()
+        def process_stick_event(self, event):
+            self.cursor.move(event.x * 30, event.y * -30)
+            print(event.stick, event.x, event.y)
 
-for i in range(10000):
-    time.sleep(0.03)
-    events = inputs.get_gamepad()
-    for event in events:
-        if event.code == "ABS_RX":
-            x = (event.state / 32768) * 30
-    
-        elif event.code == "ABS_RY":
-            y = (event.state / 32768) * -30
+        def process_trigger_event(self, event):
+            pass
 
-        elif event.code == "BTN_TL":
-            if event.state:
-                cursor.press(pynput.mouse.Button.left)
-            else:
-                cursor.release(pynput.mouse.Button.left)
+        def process_connection_event(self, event):
+            pass
+
+    # Create the handler and set the events functions
+
+    cursor = pynput.mouse.Controller()
+    handler = MouseHandler(cursor, 0)
+    thread = GamepadThread(handler)
+
+    thread.start()
+    time.sleep(10)
+
+else:
+    raise ImportError("This is not a module. Import XInput only")
