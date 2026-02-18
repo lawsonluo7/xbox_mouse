@@ -4,73 +4,94 @@ import threading
 
 class XboxOneController:
     # Constants for maximum values of triggers and joysticks
-    # The joystick and triggers will give integers between 0 and 255 for triggers
-    # and -32768 to 32767 for joysticks, so we will normalize them to 0-1 range
-    # with these constants
-    max_trig_val = 256  # 2 to the power of 8, as the trigger values are unsigned 8-bit integers
-    max_joy_val = 32768  # 2 to the power of 15, as the joystick values are signed 16-bit integers
-
+    _max_trig_val = 256  # 2 to the power of 8, as the trigger values are unsigned 8-bit integers
+    _max_joy_val = 32768  # 2 to the power of 15, as the joystick values are signed 16-bit integers
     def __init__(self):
-        self.left_joystick = [0, 0]
-        self.right_joystick = [0, 0]
-        self.left_trig = 0
-        self.right_trig = 0
-        self.left_bumper = 0
-        self.right_bumper = 0
-        self.a_button = 0
-        self.x_button = 0
-        self.y_button = 0
-        self.b_button = 0
-        self.left_joystick_button = 0
-        self.right_joystick_button = 0
-        self.back = 0
-        self.start = 0
-        # d-pad on xbox one does not work with inputs library, so we will not implement it
-        # it might be my issue, if it works for you please create an issue on github to let me know
-        # or if you know how to fix it, create a pull request on github
+        self.l_joy = self._placeholder_callable
+        self.r_joy = self._placeholder_callable
+        self.l_trig = self._placeholder_callable
+        self.r_trig = self._placeholder_callable
+        self.l_bumper = self._placeholder_callable
+        self.r_bumper = self._placeholder_callable
+        self.a = self._placeholder_callable
+        self.x = self._placeholder_callable
+        self.y = self._placeholder_callable
+        self.b = self._placeholder_callable
+        self.l_joy_btn = self._placeholder_callable
+        self.r_joy_btn = self._placeholder_callable
+        self.back = self._placeholder_callable
+        self.start = self._placeholder_callable
+        self.dpad = self._placeholder_callable
+
+        self._dpad_x = 0
+        self._dpad_y = 0
+        self._l_joy_x = 0
+        self._l_joy_y = 0
+        self._r_joy_x = 0
+        self._r_joy_y = 0
 
         self._monitor_thread = threading.Thread(target=self._monitor_controller, args=())
-        self._monitor_thread.daemon = True
         self._monitor_thread.start()
+
+    def _placeholder_callable(self, *args, **kwargs):
+        pass
 
     def _monitor_controller(self):
         while True:
             events = inputs.get_gamepad()
             for event in events:
                 if event.code == 'ABS_Y':
-                    self.left_joystick[1] = event.state / self.max_joy_val
+                    self._l_joy_y = event.state / self._max_joy_val
+                    self.l_joy(self._l_joy_x, self._l_joy_y)
                 elif event.code == 'ABS_X':
-                    self.left_joystick[0] = event.state / self.max_joy_val
+                    self._l_joy_x = event.state / self._max_joy_val
+                    self.l_joy(self._l_joy_x, self._l_joy_y)
                 elif event.code == 'ABS_RY':
-                    self.right_joystick[1] = event.state / self.max_joy_val
+                    self._r_joy_y = event.state / self._max_joy_val
+                    self.r_joy(self._r_joy_x, self._r_joy_y)
                 elif event.code == 'ABS_RX':
-                    self.right_joystick[0] = event.state / self.max_joy_val
+                    self._r_joy_x = event.state / self._max_joy_val
+                    self.r_joy(self._r_joy_x, self._r_joy_y)
                 elif event.code == 'ABS_Z':
-                    self.left_trig = event.state / self.max_trig_val
+                    self.l_trig(event.state / self._max_trig_val)
                 elif event.code == 'ABS_RZ':
-                    self.right_trig = event.state / self.max_trig_val
+                    self.r_trig(event.state / self._max_trig_val)
                 elif event.code == 'BTN_TL':
-                    self.left_bumper = event.state
+                    self.l_bumper(event.state)
                 elif event.code == 'BTN_TR':
-                    self.right_bumper = event.state
+                    self.r_bumper(event.state)
                 elif event.code == 'BTN_SOUTH':
-                    self.a_button = event.state
+                    self.a(event.state)
                 elif event.code == 'BTN_NORTH':
-                    self.y_button = event.state
+                    self.y(event.state)
                 elif event.code == 'BTN_WEST':
-                    self.x_button = event.state
+                    self.x(event.state)
                 elif event.code == 'BTN_EAST':
-                    self.b_button = event.state
+                    self.b(event.state)
                 elif event.code == 'BTN_THUMBL':
-                    self.left_joystick_button = event.state
+                    self.l_joy_btn(event.state)
                 elif event.code == 'BTN_THUMBR':
-                    self.right_joystick_button = event.state
+                    self.r_joy_btn(event.state)
                 elif event.code == 'BTN_SELECT':
-                    self.back = event.state
+                    self.back(event.state)
                 elif event.code == 'BTN_START':
-                    self.start = event.state
+                    self.start(event.state)
+                elif event.code == 'ABS_HAT0X':
+                    self._dpad_x = event.state
+                    self.dpad(self._dpad_x, self._dpad_y)
+                elif event.code == 'ABS_HAT0Y':
+                    self._dpad_y = event.state
+                    self.dpad(self._dpad_x, self._dpad_y)
+                
 
 if __name__ == '__main__':
+    def on_l_joy_move(x, y):
+        print(f'Moved to ({x}, {y})')
+
+    def on_a_update(state):
+        print(f'A button state: {state}')
+
     js = XboxOneController()
-    while True:
-        print(js.left_joystick, js.right_joystick)
+
+    js.l_joy = on_l_joy_move
+    js.a = on_a_update
