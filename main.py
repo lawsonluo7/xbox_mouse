@@ -1,5 +1,5 @@
 import inputs
-import math
+import pynput
 import threading
 
 class XboxOneController:
@@ -53,45 +53,49 @@ class XboxOneController:
                     self._r_joy_x = event.state / self._max_joy_val
                     self.r_joy(self._r_joy_x, self._r_joy_y)
                 elif event.code == 'ABS_Z':
-                    self.l_trig(event.state / self._max_trig_val)
+                    self.l_trig(bool(event.state) / self._max_trig_val)
                 elif event.code == 'ABS_RZ':
-                    self.r_trig(event.state / self._max_trig_val)
+                    self.r_trig(bool(event.state) / self._max_trig_val)
                 elif event.code == 'BTN_TL':
-                    self.l_bumper(event.state)
+                    self.l_bumper(bool(event.state))
                 elif event.code == 'BTN_TR':
-                    self.r_bumper(event.state)
+                    self.r_bumper(bool(event.state))
                 elif event.code == 'BTN_SOUTH':
-                    self.a(event.state)
+                    self.a(bool(event.state))
                 elif event.code == 'BTN_NORTH':
-                    self.y(event.state)
+                    self.y(bool(event.state))
                 elif event.code == 'BTN_WEST':
-                    self.x(event.state)
+                    self.x(bool(event.state))
                 elif event.code == 'BTN_EAST':
-                    self.b(event.state)
+                    self.b(bool(event.state))
                 elif event.code == 'BTN_THUMBL':
-                    self.l_joy_btn(event.state)
+                    self.l_joy_btn(bool(event.state))
                 elif event.code == 'BTN_THUMBR':
-                    self.r_joy_btn(event.state)
+                    self.r_joy_btn(bool(event.state))
                 elif event.code == 'BTN_SELECT':
-                    self.back(event.state)
+                    self.back(bool(event.state))
                 elif event.code == 'BTN_START':
-                    self.start(event.state)
+                    self.start(bool(event.state))
                 elif event.code == 'ABS_HAT0X':
-                    self._dpad_x = event.state
+                    self._dpad_x = bool(event.state)
                     self.dpad(self._dpad_x, self._dpad_y)
                 elif event.code == 'ABS_HAT0Y':
-                    self._dpad_y = event.state
+                    self._dpad_y = bool(event.state)
                     self.dpad(self._dpad_x, self._dpad_y)
                 
 
 if __name__ == '__main__':
-    def on_l_joy_move(x, y):
-        print(f'Moved to ({x}, {y})')
+    cursor = pynput.mouse.Controller()
+    def on_r_joy_move(x, y):
+        cursor.move(round(x, 5)**3 * 30, round(y, 5)**3 * -30)
 
-    def on_a_update(state):
-        print(f'A button state: {state}')
+    def on_l_bumper(pressed):
+        if pressed:
+            cursor.press(pynput.mouse.Button.left)
+        else:
+            cursor.release(pynput.mouse.Button.left)
 
     js = XboxOneController()
 
-    js.l_joy = on_l_joy_move
-    js.a = on_a_update
+    js.l_joy = on_r_joy_move
+    js.l_bumper = on_l_bumper
