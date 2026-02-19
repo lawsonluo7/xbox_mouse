@@ -2,8 +2,8 @@ from XInput import *
 import pynput
 import time
 
-
-set_deadzone(DEADZONE_LEFT_THUMB, 20)
+set_deadzone(DEADZONE_LEFT_THUMB, 10)
+set_deadzone(DEADZONE_RIGHT_THUMB, 10)
 
 class MyHandler(EventHandler):
     keyboard = pynput.keyboard.Controller()
