@@ -1,41 +1,52 @@
-# from mouse import MouseHandler as MouseHandler
 from XInput import *
 import pynput
 import time
 
-if __name__ == "__main__":
-    set_deadzone(DEADZONE_TRIGGER,10)
 
-    class MouseHandler(EventHandler):
-        def __init__(self, cursor,  *controllers):
-            self.cursor = cursor
-            super().__init__(
-                *controllers,
-                )
+set_deadzone(DEADZONE_LEFT_THUMB, 20)
 
-        def process_button_event(self, event):
-            if event.type == EVENT_BUTTON_PRESSED and event.button == BUTTON_RIGHT_SHOULDER:
-                self.cursor.click(pynput.mouse.Button.left)
-            print(event.type, event.button)
-
-        def process_stick_event(self, event):
-            self.cursor.move(event.x * 30, event.y * -30)
-            print(event.stick, event.x, event.y)
-
-        def process_trigger_event(self, event):
-            pass
-
-        def process_connection_event(self, event):
-            pass
-
-    # Create the handler and set the events functions
-
+class MyHandler(EventHandler):
+    keyboard = pynput.keyboard.Controller()
     cursor = pynput.mouse.Controller()
-    handler = MouseHandler(cursor, 0)
-    thread = GamepadThread(handler)
+    keybinds = {
+        "LEFT_THUMB": None,
+        "RIGHT_THUMB": None,
+        "LEFT_SHOULDER":  pynput.mouse.Button.left,
+        "RIGHT_SHOULDER": pynput.mouse.Button.right,
+        "BACK": None,
+        "START": None,
+        "DPAD_LEFT": pynput.keyboard.Key.left,
+        "DPAD_RIGHT": pynput.keyboard.Key.right,
+        "DPAD_UP": pynput.keyboard.Key.up,
+        "DPAD_DOWN": pynput.keyboard.Key.down,
+        "A": None,
+        "B": None,
+        "Y": None,
+        "X": None,
+    }
 
-    thread.start()
-    time.sleep(10)
+    def process_button_event(self, event):
+        button = self.keybinds.get(event.button)
+        device = self.cursor if type(button) == pynput.mouse.Button else self.keyboard
+        func = device.press if event.type == EVENT_BUTTON_PRESSED else device.release
+        if button is not None:
+            func(button)
+    
+    def process_stick_event(self, event):
+        if event.stick == 1:
+            self.cursor.move(round(event.x, 1)**3 * 20, round(event.y, 1)**3 * -20)
+        elif event.stick == 0:
+            self.cursor.scroll(round(event.x, 1)**3 * 2, round(event.y, 1)**3 * 2)
 
-else:
-    raise ImportError("This is not a module. Import XInput only")
+    def process_trigger_event(self, event):
+        pass
+    
+    def process_connection_event(self, event):
+        pass
+
+handler = MyHandler(0)
+thread = GamepadThread(handler)
+thread.daemon = False
+thread.start()
+while True:
+    time.sleep(3600)
